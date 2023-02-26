@@ -1,22 +1,18 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 from prompt import get_manager_response
 from fake_database import fake_database
+from review import Review, get_review_sentiment
 
 
 app = FastAPI()
 
 
-class Review(BaseModel):
-    review_text: str
-    company_name: str
-
-
 @app.post("/")
 async def review_response(review: Review):
     company_details = fake_database[review.company_name]
-    response = get_manager_response(review.review_text, company_details)
-    return {"response": response, "status": 200}
+    if get_review_sentiment(review.review_text) <= company_details.negative_response_threshold:
+        response = get_manager_response(review.review_text, company_details)
+        return {"response": response, "status": 200}
 
 
 if __name__ == "__main__":
